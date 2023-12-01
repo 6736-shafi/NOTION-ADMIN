@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        /* Add your CSS styling here */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .selected {
+            background-color: #d3d3d3;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    <input type="text" id="searchInput" placeholder="Search by name or email...">
+    <button onclick="search()">Search</button>
+</div>
+
+<table id="userTable">
+    <thead>
+        <tr>
+            <th>Select All <input type="checkbox" id="selectAllCheckbox" onclick="selectAll()"></th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- User rows will be dynamically added here -->
+    </tbody>
+</table>
+
+<div>
+    <button onclick="deleteSelected()">Delete Selected</button>
+    <div>
+        <button onclick="navigate('first')">First Page</button>
+        <button onclick="navigate('prev')">Previous Page</button>
+        <span id="currentPage">Page 1</span>
+        <button onclick="navigate('next')">Next Page</button>
+        <button onclick="navigate('last')">Last Page</button>
+    </div>
+</div>
+
+<script>
+    // Sample API endpoint
+    const apiEndpoint = 'https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json';
+    
+    // Placeholder for fetched user data
+    let users = [];
+    
+    // Placeholder for selected user IDs
+    let selectedUserIds = [];
+    
+    // Function to fetch user data from the API
+    async function fetchUsers() {
+        const response = await fetch(apiEndpoint);
+        users = await response.json();
+        renderTable();
+    }
+    
+    // Function to render the table based on the current state
+    function renderTable() {
+        const tableBody = document.querySelector('#userTable tbody');
+        tableBody.innerHTML = '';
+    
+        // Add rows based on the current page and search results
+        const startIdx = (currentPage - 1) * 10;
+        const endIdx = startIdx + 10;
+        const displayedUsers = users.slice(startIdx, endIdx);
+    
+        displayedUsers.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" onclick="selectUser('${user.id}')"></td>
+                <td>${user.id}</td>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${user.role}</td>
+                <td>
+                    <button onclick="editUser('${user.id}')">Edit</button>
+                    <button onclick="deleteUser('${user.id}')">Delete</button>
+                </td>
+            `;
+    
+            // Highlight selected rows
+            if (selectedUserIds.includes(user.id)) {
+                row.classList.add('selected');
+            }
+    
+            tableBody.appendChild(row);
+        });
+    
+        // Update current page display
+        document.getElementById('currentPage').innerText = `Page ${currentPage}`;
+    }
+    
+    // Function to handle search
+    function search() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filteredUsers = users.filter(user =>
+            user.name.toLowerCase().includes(searchTerm) || user.email.toLowerCase().includes(searchTerm)
+        );
+        currentPage = 1;
+        renderTable();
+    }
+    
+    // Function to handle pagination navigation
+    function navigate(direction) {
+        if (direction === 'first') {
+            currentPage = 1;
+        } else if (direction === 'prev') {
+            currentPage = Math.max(1, currentPage - 1);
+        } else if (direction === 'next') {
+            const lastPage = Math.ceil(users.length / 10);
+            currentPage = Math.min(lastPage, currentPage + 1);
+        } else if (direction === 'last') {
+            currentPage = Math.ceil(users.length / 10);
+        }
+        renderTable();
+    }
+    
+    // Function to handle user selection
+    function selectUser(userId) {
+        const index = selectedUserIds.indexOf(userId);
+        if (index === -1) {
+            selectedUserIds.push(userId);
+        } else {
+            selectedUserIds.splice(index, 1);
+        }
+        renderTable();
+    }
+    
+    // Function to handle selecting/deselecting all users
+    function selectAll() {
+        const checkboxes = document.querySelectorAll('#userTable tbody input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = document.getElementById('selectAllCheckbox').checked;
+        });
+        selectedUserIds = checkboxes
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.parentElement.parentElement.children[1].innerText);
+        renderTable();
+    }
+    
+    // Function to handle editing a user
+    function editUser(userId) {
+        // Implement editing logic here
+        console.log(`Edit user with ID ${userId}`);
+    }
+    
+    // Function to handle deleting a user
+    function deleteUser(userId) {
+        // Implement deletion logic here
+        console.log(`Delete user with ID ${userId}`);
+    }
+    
+    // Function to handle deleting selected users
+    function deleteSelected() {
+        // Implement delete selected logic here
+        console.log('Delete selected users:', selectedUserIds);
+    }
+    
+    // Initial fetch and render
+    let currentPage = 1;
+    fetchUsers();
+</script>
+
+</body>
+</html>
